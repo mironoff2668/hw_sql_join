@@ -1,21 +1,23 @@
 --Количество исполнителей в каждом жанре.
-select genre_id, COUNT (distinct artist_id) from genre_artist ga
-group by genre_id 
+select gm.name, COUNT (distinct artist_id) from genre_music gm
+join genre_artist ga2 on gm.genre_id = ga2.genre_id 
+group by gm.name
 order by COUNT (distinct artist_id) desc;
 
 --Количество треков, вошедших в альбомы 2019–2020 годов.
-select count(name) from album_music am
- where release_year > 2018 and release_year < 2021;
+select count(track_id) from track_music tm
+join album_music am on tm.album_id = am.album_id
+where release_year = '2019' or release_year = '2020';
 
 
 --Средняя продолжительность треков по каждому альбому.
 select album_id, AVG(duration)  from track_music tm
 group by album_id
-order by AVG(duration) desc;
+order by album_id;
 
 
 --Все исполнители, которые не выпустили альбомы в 2020 году.
-select artist_id from artist_music am
+select am.name from artist_music am
 join album_music am2 on am.artist_id = am2.album_id
 where release_year != '2020';
 
@@ -36,20 +38,30 @@ having COUNT(gm.name) > 1;
 
 --Наименования треков, которые не входят в сборники.
 select tm.name from track_music tm
-right join collection_music cm on tm.track_id = cm.track_id;
+left join collection_music cm on tm.track_id = cm.track_id
+where cm.track_id is null;
 
 
 --Исполнитель или исполнители, написавшие самый короткий по продолжительности трек,
 -- — теоретически таких треков может быть несколько.
-select am.name, MIN(tm.duration) from artist_music am
-join album_music am2 on am.artist_id = am2.album_id
-join track_music tm on am2.album_id = tm.album_id
-group by am.name, tm.duration
-order by tm.duration
-limit 1;
+select am2.name, tm.duration from track_music tm
+join album_music am on am.album_id = tm.album_id
+join artist_music am2 on am.album_id = am2.artist_id
+group by am2.name, tm.duration
+having tm.duration = (select min(duration) from track_music)
+order by am2.name;
+
 
 --Названия альбомов, содержащих наименьшее количество треков.
-select am.name, COUNT(tm.track_id) from album_music am
-join track_music tm on am.album_id = tm.album_id
-group by am.name
-order by MIN(tm.track_id) desc;
+select distinct am.name from album_music am
+left join track_music tm on tm.album_id = am.album_id;
+where tm.album_id in (select album_id from track_music
+    				 group by album_id
+					 having count(album_id) = (
+					 select count(album_id) from track_music
+					 group by album_id
+					 order by count
+					 limit 1
+					 )
+)
+order by am.name;
