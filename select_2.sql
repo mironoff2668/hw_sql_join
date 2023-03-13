@@ -18,7 +18,8 @@ order by album_id;
 
 --Все исполнители, которые не выпустили альбомы в 2020 году.
 select am.name from artist_music am
-join album_music am2 on am.artist_id = am2.album_id
+join album_artist aa on am.artist_id = aa.artist_id 
+join album_music am2 on aa.album_id = am2.album_id
 where release_year != '2020';
 
 
@@ -30,7 +31,8 @@ where am2.name = 'Pet Shop Boys';
 
 --Названия альбомов, в которых присутствуют исполнители более чем одного жанра.
 select am.name, COUNT(gm.name)  from album_music am
-join artist_music am2 on am.album_id = am2.artist_id
+join album_artist aa on am.album_id = aa.album_id 
+join artist_music am2  on aa.artist_id = am2.artist_id
 join genre_artist ga on am2.artist_id = ga.artist_id 
 join genre_music gm on ga.genre_id = gm.genre_id
 group by am.name
@@ -45,8 +47,9 @@ where cm.track_id is null;
 --Исполнитель или исполнители, написавшие самый короткий по продолжительности трек,
 -- — теоретически таких треков может быть несколько.
 select am2.name, tm.duration from track_music tm
-join album_music am on am.album_id = tm.album_id
-join artist_music am2 on am.album_id = am2.artist_id
+join collection_music cm on tm.track_id = cm.track_id
+join album_music am3 on cm.album_id = am3.album_id 
+join artist_music am2 on am3.album_id = am2.artist_id
 group by am2.name, tm.duration
 having tm.duration = (select min(duration) from track_music)
 order by am2.name;
