@@ -56,15 +56,12 @@ order by am2.name;
 
 
 --Названия альбомов, содержащих наименьшее количество треков.
-select distinct am.name from album_music am
-left join track_music tm on tm.album_id = am.album_id;
-where tm.album_id in (select album_id from track_music
-    				 group by album_id
-					 having count(album_id) = (
-					 select count(album_id) from track_music
-					 group by album_id
-					 order by count
-					 limit 1
-					 )
-)
-order by am.name;
+select am.name, COUNT(tm.name) from album_music am
+join track_music tm on am.album_id = tm.album_id 
+group by am.album_id 
+having COUNT(tm.name) = (
+		select COUNT(tm.name) from album_music am2
+		join track_music tm2 on am2.album_id = tm2.album_id
+		group by am2.album_id
+		order by COUNT(tm2.name)
+		limit 1);
